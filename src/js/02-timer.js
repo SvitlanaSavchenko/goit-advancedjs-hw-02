@@ -8,7 +8,7 @@ import iziToast from 'izitoast';
 // Додатковий імпорт стилів
 import 'izitoast/dist/css/iziToast.min.css';
 
-// Елементи інтерфейсу
+// Отримання посилань на елементи DOM
 const flatpickrElement = document.getElementById('datetime-picker');
 const startButton = document.querySelector('[data-start]');
 const daysElement = document.querySelector('[data-days]');
@@ -16,27 +16,10 @@ const hoursElement = document.querySelector('[data-hours]');
 const minutesElement = document.querySelector('[data-minutes]');
 const secondsElement = document.querySelector('[data-seconds]');
 
-// Функція конвертації мілісекунд в об'єкт {days, hours, minutes, seconds}
-function convertMs(ms) {
-  const second = 1000;
-  const minute = second * 60;
-  const hour = minute * 60;
-  const day = hour * 24;
+// Змінна для зберігання інтервалу
+let countdownInterval;
 
-  const days = Math.floor(ms / day);
-  const hours = Math.floor((ms % day) / hour);
-  const minutes = Math.floor(((ms % day) % hour) / minute);
-  const seconds = Math.floor((((ms % day) % hour) % minute) / second);
-
-  return { days, hours, minutes, seconds };
-}
-
-// Функція для додавання ведучого нуля до числа, якщо воно менше 10
-function addLeadingZero(value) {
-  return value < 10 ? `0${value}` : value;
-}
-
-// Опції для бібліотеки flatpickr
+// Налаштування flatpickr
 const options = {
   enableTime: true,
   time_24hr: true,
@@ -46,6 +29,7 @@ const options = {
     const selectedDate = selectedDates[0];
     const currentDate = new Date();
 
+    // Перевірка, чи обрана користувачем дата в майбутньому
     if (selectedDate < currentDate) {
       iziToast.error({
         title: 'Error',
@@ -58,40 +42,89 @@ const options = {
   },
 };
 
-// Ініціалізація flatpickr
-flatpickr(flatpickrElement, options);
+// Ініціалізація календаря flatpickr
+const calendar = flatpickr(flatpickrElement, options);
 
-// Змінні для інтервалу таймера
-let countdownInterval;
-let endTime;
+// Обробник події при кліку на поле вибору дати
+flatpickrElement.addEventListener('click', () => {
+  // Перевірка, чи запущений таймер
+  if (countdownInterval) {
+    iziToast.warning({
+      title: 'Warning',
+      message: 'Please reload the page to change the timer.',
+    });
+  }
+});
 
-// Функція оновлення таймера
-function updateTimer() {
+// Функція для оновлення таймера
+function updateTimer(endTime) {
   const currentTime = new Date().getTime();
-  const difference = endTime - currentTime;
+  const timeLeft = endTime - currentTime;
 
-  if (difference <= 0) {
+  // Перевірка, чи вже минув термін таймера
+  if (timeLeft <= 0) {
     clearInterval(countdownInterval);
-    startButton.disabled = true;
+    daysElement.textContent = '00';
+    hoursElement.textContent = '00';
+    minutesElement.textContent = '00';
+    secondsElement.textContent = '00';
+    iziToast.success({
+      title: 'Countdown Finished',
+      message: 'The countdown has ended!',
+    });
+    flatpickrElement.disabled = false;
     return;
   }
 
-  const time = convertMs(difference);
+  // Обчислення часу
+  const time = convertMs(timeLeft);
   daysElement.textContent = addLeadingZero(time.days);
   hoursElement.textContent = addLeadingZero(time.hours);
   minutesElement.textContent = addLeadingZero(time.minutes);
   secondsElement.textContent = addLeadingZero(time.seconds);
 }
 
-// Обробник події кліку на кнопці "Start"
+// Обробник події при кліку на кнопку Start
 startButton.addEventListener('click', () => {
-  const selectedDate = flatpickr.parseDate(
+  // Перевірка, чи таймер вже запущений
+  if (countdownInterval) {
+    iziToast.warning({
+      title: 'Warning',
+      message: 'Please reload the page to change the timer.',
+    });
+    return;
+  }
+
+  const selectedDate = calendar.parseDate(
     flatpickrElement.value,
     'Y-m-d H:i:S'
   );
-  endTime = selectedDate.getTime();
+  const endTime = selectedDate.getTime();
 
+  // Запуск таймера
   countdownInterval = setInterval(() => {
-    updateTimer();
+    updateTimer(endTime);
   }, 1000);
+
+  flatpickrElement.disabled = true;
 });
+
+// Функція для конвертації мілісекунд у дні, години, хвилини і секунди
+function convertMs(ms) {
+  const second = 1000;
+  const minute = second * 60;
+  const hour = minute * 60;
+  const day = hour * 24;
+
+  const days = Math.floor(ms / day);
+  const hours = Math.floor((ms % day) / hour);
+  const minutes = Math.floor((ms % hour) / minute);
+  const seconds = Math.floor((ms % minute) / second);
+
+  return { days, hours, minutes, seconds };
+}
+
+// Функція для додавання ведучого нуля
+function addLeadingZero(value) {
+  return value < 10 ? `0${value}` : value;
+}
