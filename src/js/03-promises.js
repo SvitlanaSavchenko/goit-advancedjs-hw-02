@@ -3,7 +3,7 @@ import iziToast from 'izitoast';
 // Додатковий імпорт стилів
 import 'izitoast/dist/css/iziToast.min.css';
 
-// Отримання посилання на форму
+// Отримання форми
 const form = document.querySelector('.form');
 
 // Функція для створення промісу з вказаною затримкою
@@ -14,7 +14,7 @@ function createPromise(position, delay) {
 
     // Встановлення затримки для промісу
     setTimeout(() => {
-      // Виклик resolve або reject залежно від умови
+      // Виклик resolve або reject в залежності від умови
       if (shouldResolve) {
         resolve({ position, delay });
       } else {
@@ -24,8 +24,8 @@ function createPromise(position, delay) {
   });
 }
 
-// Обробник події сабміту форми
-form.addEventListener('submit', event => {
+// Додавання обробника події для сабміту форми
+form.addEventListener('submit', async event => {
   event.preventDefault();
 
   // Отримання значень з полів форми
@@ -33,24 +33,31 @@ form.addEventListener('submit', event => {
   const step = parseInt(form.elements['step'].value);
   const amount = parseInt(form.elements['amount'].value);
 
-  // Створення вказаної кількості промісів
-  for (let i = 1; i <= amount; i++) {
-    // Виклик функції createPromise з відповідними параметрами
-    createPromise(i, delay)
-      .then(({ position, delay }) => {
-        iziToast.success({
-          title: 'Success',
-          message: `Fulfilled promise ${position} in ${delay}ms`,
-        });
-      })
-      .catch(({ position, delay }) => {
-        iziToast.error({
-          title: 'Error',
-          message: `Rejected promise ${position} in ${delay}ms`,
-        });
-      });
+  // Зберігання початкової затримки для подальшого збільшення
+  let currentDelay = delay;
 
-    // Збільшення затримки для наступних промісів
-    delay += step;
+  // Цикл для створення промісів
+  for (let i = 1; i <= amount; i++) {
+    try {
+      // Очікування виконання промісу
+      await createPromise(i, currentDelay)
+        .then(({ position, delay }) => {
+          // Вивід повідомлення успішного промісу з iziToast
+          iziToast.success({
+            message: `✅ Fulfilled promise ${position} in ${delay}ms`,
+          });
+        })
+        .catch(({ position, delay }) => {
+          // Вивід повідомлення відхиленого промісу з iziToast
+          iziToast.error({
+            message: `❌ Rejected promise ${position} in ${delay}ms`,
+          });
+        });
+    } catch (error) {
+      console.error(error);
+    }
+
+    // Збільшення затримки для наступного промісу
+    currentDelay += step;
   }
 });
