@@ -42,6 +42,11 @@ const options = {
   },
 };
 
+// Встановлення кнопки startButton неактивною при завантаженні сторінки
+document.addEventListener('DOMContentLoaded', () => {
+  startButton.disabled = true; // Встановлюємо кнопку в стан "disable"
+});
+
 // Ініціалізація календаря flatpickr
 const calendar = flatpickr(flatpickrElement, options);
 
@@ -107,6 +112,7 @@ startButton.addEventListener('click', () => {
   }, 1000);
 
   flatpickrElement.disabled = true;
+  startButton.disabled = true;
 });
 
 // Функція для конвертації мілісекунд у дні, години, хвилини і секунди
@@ -128,3 +134,15 @@ function convertMs(ms) {
 function addLeadingZero(value) {
   return value < 10 ? `0${value}` : value;
 }
+
+// Перевіряємо обрану користувачем дату під час завантаження сторінки
+flatpickrElement.addEventListener('change', () => {
+  const selectedDate = calendar.selectedDates[0];
+  const currentDate = new Date();
+
+  if (selectedDate < currentDate) {
+    startButton.disabled = true; // Встановлюємо кнопку в стан "disable"
+  } else {
+    startButton.disabled = false; // Встановлюємо кнопку в стан "enable"
+  }
+});

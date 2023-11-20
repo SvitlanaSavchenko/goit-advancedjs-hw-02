@@ -1,5 +1,6 @@
 // Описаний в документації
 import iziToast from 'izitoast';
+
 // Додатковий імпорт стилів
 import 'izitoast/dist/css/iziToast.min.css';
 
@@ -25,7 +26,7 @@ function createPromise(position, delay) {
 }
 
 // Додавання обробника події для сабміту форми
-form.addEventListener('submit', async event => {
+form.addEventListener('submit', event => {
   event.preventDefault();
 
   // Отримання значень з полів форми
@@ -38,26 +39,25 @@ form.addEventListener('submit', async event => {
 
   // Цикл для створення промісів
   for (let i = 1; i <= amount; i++) {
-    try {
-      // Очікування виконання промісу
-      await createPromise(i, currentDelay)
-        .then(({ position, delay }) => {
-          // Вивід повідомлення успішного промісу з iziToast
-          iziToast.success({
-            message: `✅ Fulfilled promise ${position} in ${delay}ms`,
-          });
-        })
-        .catch(({ position, delay }) => {
-          // Вивід повідомлення відхиленого промісу з iziToast
-          iziToast.error({
-            message: `❌ Rejected promise ${position} in ${delay}ms`,
-          });
+    // Виконання промісу
+    createPromise(i, currentDelay)
+      .then(({ position, delay }) => {
+        // Вивід повідомлення успішного промісу з iziToast
+        iziToast.success({
+          message: `✅ Fulfilled promise ${position} in ${delay}ms`,
         });
-    } catch (error) {
-      console.error(error);
-    }
+      })
+      .catch(({ position, delay }) => {
+        // Вивід повідомлення відхиленого промісу з iziToast
+        iziToast.error({
+          message: `❌ Rejected promise ${position} in ${delay}ms`,
+        });
+      });
 
     // Збільшення затримки для наступного промісу
     currentDelay += step;
   }
+
+  // Скидання форми
+  form.reset();
 });
